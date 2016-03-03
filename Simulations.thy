@@ -1,5 +1,5 @@
 section {* Definition and Soundness of Refinement Mappings,
-  Forward Simulations and Backward Simulations *}
+  Forward Simulations, and Backward Simulations *}
 
 theory Simulations
 imports IOA
@@ -97,7 +97,7 @@ proof -
       using Nil.hyps by (simp add:trace_simps)
     moreover
     have "last_state ?e_A = f (last_state e_B)" 
-      using Nil.hyps by (metis last_state.simps(1) pair_collapse)
+      using Nil.hyps by (metis last_state.simps(1) prod.collapse)
     ultimately show ?case by fast
   next
     case (Cons p ps e_B)
@@ -126,7 +126,7 @@ proof -
     moreover 
     have "trace (ioa.asig A) ?e_A = trace (ioa.asig A) e_B"
       using ih2 Cons.hyps(2) 7 step_eq_traces[of A e_A' ?e_B' ?a e]
-        by (auto simp add:cons_exec_def) (metis pair_collapse)
+        by (auto simp add:cons_exec_def) (metis prod.collapse)
     moreover have "last_state ?e_A = f ?t" using ih3 4 5 last_state_of_append 
       by metis
     ultimately show ?case using Cons.hyps(2) 
@@ -185,7 +185,7 @@ proof -
     and 6:"is_exec_frag_of A e"
     and 7:"let tr = trace (ioa.asig A) e in if ?a \<in> ext A then tr = [?a] else tr = []" 
       using 2 3 assms(1) ih3 by (simp add:is_forward_sim_def) 
-        (metis pair_collapse prod.inject)
+        (metis prod.collapse prod.inject)
     let ?e_A = "append_exec e_A' e"
     have "is_exec_of A ?e_A" 
       using ih1 ih3 4 6 append_exec_frags_is_exec_frag[of A e e_A']
@@ -194,7 +194,7 @@ proof -
     moreover 
     have "trace (ioa.asig A) ?e_A = trace (ioa.asig A) e_B"
       using ih2 Cons.hyps(2) 7 step_eq_traces[of A e_A' ?e_B' ?a e]
-        by (auto simp add:cons_exec_def Let_def) (metis pair_collapse)
+        by (auto simp add:cons_exec_def Let_def) (metis prod.collapse)
     moreover have "last_state ?e_A \<in> f ?t" using ih3 4 5 last_state_of_append 
       by metis
     ultimately show ?case using Cons.hyps(2) 
@@ -243,7 +243,7 @@ proof -
       let ?e_B' = "(fst e_B, ps)"
       let ?s = "last_state ?e_B'" let ?t = "snd p" let ?a = "fst p"
       have 5:"?t = last_state e_B" using Cons.hyps(2) 
-        by (metis last_state.simps(2) pair_collapse)
+        by (metis last_state.simps(2) prod.collapse)
       have 1:"is_exec_of B ?e_B'" and 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
         using Cons.prems and Cons.hyps(2)
           by (simp_all add:is_exec_of_def,
@@ -263,11 +263,11 @@ proof -
       have "is_exec_of A ?e_A" 
         using ih1 ih3 4 6 append_exec_frags_is_exec_frag[of A e e_A']
           by (metis append_exec_def append_exec_frags_is_exec_frag 
-            fst_conv is_exec_of_def) 
+            fst_conv is_exec_of_def)
       moreover 
       have "trace (ioa.asig A) ?e_A = trace (ioa.asig A) e_B"
         using ih2 Cons.hyps(2) 7 step_eq_traces[of A e_A' ?e_B' ?a e]
-          by (auto simp add:cons_exec_def Let_def) (metis pair_collapse)
+          by (auto simp add:cons_exec_def Let_def) (metis prod.collapse)
       moreover have "last_state ?e_A = t'" using ih3 5 last_state_of_append 
         by metis
       ultimately have "\<exists> e_A . is_exec_of A e_A 

@@ -103,8 +103,8 @@ definition invariant where
 
 theorem invariantI:
   fixes A P
-  assumes "\<And> s . s \<in> start A \<Longrightarrow> P s"
-  and "\<And> s t a . \<lbrakk>reachable A s; P s; s \<midarrow>a\<midarrow>A\<longrightarrow> t\<rbrakk> \<Longrightarrow> P t"
+  assumes c1:"\<And> s . s \<in> start A \<Longrightarrow> P s"
+  and c2:"\<And> s t a . \<lbrakk>reachable A s; P s; s \<midarrow>a\<midarrow>A\<longrightarrow> t\<rbrakk> \<Longrightarrow> P t"
   shows "invariant A P"
 proof -
   { fix s
@@ -274,7 +274,7 @@ proof -
     hence "trace (ioa.asig A) e \<in> traces A"
       by (auto simp add:trace_def schedule_def traces_def 
           is_trace_of_def is_schedule_of_def is_exec_of_def)
-         (metis (full_types) pair_collapse) }
+      (metis prod.collapse) }
   ultimately show ?thesis by blast
 qed
 
@@ -316,7 +316,7 @@ proof -
     have ih:"reachable A (last_state ?e')"
     proof -
       from Cons.prems and Cons.hyps(2) have "is_exec_of A ?e'"
-        by (simp add:is_exec_of_def) (metis is_exec_frag_of.simps(1,3) list.exhaust pair_collapse)
+        by (simp add:is_exec_of_def) (metis is_exec_frag_of.simps(1,3) list.exhaust prod.collapse)
       with Cons.hyps(1) show ?thesis by auto
     qed
     from Cons.prems and Cons.hyps(2) have "(last_state ?e')\<midarrow>(fst p)\<midarrow>A\<longrightarrow>(snd p)"
@@ -363,9 +363,9 @@ proof -
   next
     case (2 A p)
     have "last_state e \<midarrow>(fst p)\<midarrow>A\<longrightarrow> snd p" using "2.prems"(2,3) and "2.hyps" 
-      by (metis is_exec_frag_of.simps(2) pair_collapse)
+      by (metis is_exec_frag_of.simps(2) prod.collapse)
     hence "is_exec_frag_of A (fst e, (snd e)#p)" using "2.prems"(1) 
-      by (metis cons_exec_def pair_collapse trans_from_last_state)
+      by (metis cons_exec_def prod.collapse trans_from_last_state)
     moreover 
     have "append_exec e e' = (fst e, (snd e)#p)" using "2.hyps" 
       by (metis append_Cons append_Nil append_exec_def)
@@ -380,7 +380,7 @@ proof -
             exec_frag_prefix fst_conv prod_eqI snd_conv)
       moreover
       have "snd p' \<midarrow>(fst p)\<midarrow>A\<longrightarrow> snd p" using "1.prems"(3) "1.hyps"(2) 
-        by (metis is_exec_frag_of.simps(1) pair_collapse)
+        by (metis is_exec_frag_of.simps(1) prod.collapse)
       ultimately show ?thesis by simp
     qed
     moreover have "append_exec e e' = (fst e, (snd e)@((ps#p')#p))" 
@@ -396,6 +396,16 @@ lemma last_state_of_append:
   using assms by (cases e' rule:last_state.cases, auto simp add:append_exec_def)
 
 subsection {* Composition is monotonic with respect to the implementation relation *}
+
+(*
+lemma 
+  assumes "t \<in> traces (A\<parallel>B)"
+  shows "(t \<bar> (ioa.asig A)) \<in> traces A"
+proof -
+  { fix e
+    assume "is_exec_frag_of (A\<parallel>B) e"
+    have "is_exec_frag_of A"
+*)
 
 theorem monotonicity_fam:
   fixes fam1 fam2
