@@ -378,7 +378,7 @@ proof -
   next
     case (2 s p)
     have "last_state e \<midarrow>(fst p)\<midarrow>A\<longrightarrow> snd p" using "2.prems"(1,2) and "2.hyps"
-      by (simp add: fst_conv)
+      using fstI by auto
     hence "is_exec_frag A (fst e, (snd e)#p)" using "2.prems"(1)
       by (metis IOA.cons_exec_def IOA.trans_from_last_state assms(3) prod.collapse) 
     moreover 
@@ -389,7 +389,7 @@ proof -
   next
     case (3 s ps p' p)
     thus ?case
-      by (simp add: IOA.append_exec_def IOA.is_exec_frag.intros(3) append_Cons fst_conv snd_conv)
+      by(simp add:append_exec_def IOA.is_exec_frag.intros(3))
   qed
 qed
 
