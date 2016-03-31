@@ -6,14 +6,12 @@ begin
 
 text {* This theory is inspired by the IOA theory of Olaf Müller *}
 
-locale IOA = Sequences
-
 record 'a signature =
   inputs::"'a set"
   outputs::"'a set"
   internals::"'a set"
 
-context IOA
+locale IOA
 begin 
 
 subsection {* Signatures *}
@@ -214,14 +212,14 @@ context IOA
 begin
 
 fun is_exec_frag_of::"('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" where
-  "is_exec_frag_of A (s,(ps#p')#p) = 
-    (snd p' \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p \<and> is_exec_frag_of A (s, (ps#p')))"
+  "is_exec_frag_of A (s,p#(p'#ps)) = 
+    (snd p' \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p \<and> is_exec_frag_of A (s, (p'#ps)))"
 | "is_exec_frag_of A (s, [p]) = s \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p"
 | "is_exec_frag_of A (s, []) = True"
 
 definition is_exec_of::"('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" where
   "is_exec_of A e \<equiv> fst e \<in> start A \<and> is_exec_frag_of A e"
-  
+
 definition filter_act where
   "filter_act \<equiv> map fst"
 
@@ -290,14 +288,14 @@ definition ioa_implements :: "('s1,'a)ioa \<Rightarrow> ('s2,'a)ioa \<Rightarrow
 subsection {* Operations on Executions *}
 
 definition cons_exec where
-  "cons_exec e p \<equiv> (fst e, (snd e)#p)"
+  "cons_exec e p \<equiv> (fst e, p#(snd e))"
 
 definition append_exec where
-  "append_exec e e' \<equiv> (fst e, (snd e)@(snd e'))"
+  "append_exec e e' \<equiv> (fst e, (snd e')@(snd e))"
 
 fun last_state where
   "last_state (s,[]) = s"
-| "last_state (s,ps#p) = snd p"
+| "last_state (s,p#ps) = snd p"
 
 lemma last_state_reachable:
   fixes A e
@@ -320,7 +318,7 @@ proof -
       with Cons.hyps(1) show ?thesis by auto
     qed
     from Cons.prems and Cons.hyps(2) have "(last_state ?e')\<midarrow>(fst p)\<midarrow>A\<longrightarrow>(snd p)"
-      by (simp add:is_exec_of_def) (cases "(A,fst e,ps#p)" rule:is_exec_frag_of.cases, auto)
+      by (simp add:is_exec_of_def) (cases "(A,fst e,p#ps)" rule:is_exec_frag_of.cases, auto)
     with ih and Cons.hyps(2) show ?case
       by (metis last_state.simps(2) reachable.simps surjective_pairing)
   qed
@@ -364,18 +362,18 @@ proof -
     case (2 A p)
     have "last_state e \<midarrow>(fst p)\<midarrow>A\<longrightarrow> snd p" using "2.prems"(2,3) and "2.hyps" 
       by (metis is_exec_frag_of.simps(2) prod.collapse)
-    hence "is_exec_frag_of A (fst e, (snd e)#p)" using "2.prems"(1) 
+    hence "is_exec_frag_of A (fst e, p#(snd e))" using "2.prems"(1) 
       by (metis cons_exec_def prod.collapse trans_from_last_state)
     moreover 
-    have "append_exec e e' = (fst e, (snd e)#p)" using "2.hyps" 
+    have "append_exec e e' = (fst e, p#(snd e))" using "2.hyps" 
       by (metis append_Cons append_Nil append_exec_def)
     ultimately 
     show ?case by auto
   next
-    case (1 A ps p' p e')
-    have "is_exec_frag_of A (fst e, (snd e)@((ps#p')#p))"
+    case (1 A p p' ps e')
+    have "is_exec_frag_of A (fst e, (p#(p'#ps))@(snd e))"
     proof -
-      have "is_exec_frag_of A (fst e, (snd e)@(ps#p'))" 
+      have "is_exec_frag_of A (fst e, (p'#ps)@(snd e))" 
         by (metis "1.hyps" "1.prems" append_exec_def cons_exec_def 
             exec_frag_prefix fst_conv prod_eqI snd_conv)
       moreover
@@ -383,7 +381,7 @@ proof -
         by (metis is_exec_frag_of.simps(1) prod.collapse)
       ultimately show ?thesis by simp
     qed
-    moreover have "append_exec e e' = (fst e, (snd e)@((ps#p')#p))" 
+    moreover have "append_exec e e' = (fst e, (p#(p'#ps))@(snd e))" 
       by (metis "1.hyps"(2) append_exec_def)
     ultimately show ?case by simp
   qed
@@ -418,4 +416,3 @@ oops
 end
 
 end
-
