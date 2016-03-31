@@ -48,12 +48,12 @@ lemma step_eq_traces:
   shows "trace (ioa.asig A) e_A = trace (ioa.asig A) e_B"
 proof -
   have 3:"trace (ioa.asig A) e_B = 
-         (if a \<in> ext A then (trace (ioa.asig A) e_B') # a else trace (ioa.asig A) e_B')"
+         (if a \<in> ext A then a # (trace (ioa.asig A) e_B') else trace (ioa.asig A) e_B')"
     using e_B_def by (simp add:trace_def schedule_def filter_act_def cons_exec_def)
   have 4:"trace (ioa.asig A) e_A = 
-         (if a \<in> ext A then trace (ioa.asig A) e_A' # a else trace (ioa.asig A) e_A')"
+         (if a \<in> ext A then a # trace (ioa.asig A) e_A' else trace (ioa.asig A) e_A')"
     using 2 trace_append_is_append_trace[of "ioa.asig A" e_A' e] 
-      by(auto simp add:e_A_def tr_def split add:split_if_asm)
+      by (auto simp add:e_A_def tr_def split add:split_if_asm)
   show ?thesis using 1 3 4 by simp
 qed
 
@@ -106,8 +106,8 @@ proof -
     have 1:"is_exec_of B ?e_B'" and 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
       using Cons.prems and Cons.hyps(2)
         by (simp_all add:is_exec_of_def,
-            cases "(B,fst e_B,ps#p)" rule:is_exec_frag_of.cases, auto,
-            cases "(B,fst e_B,ps#p)" rule:is_exec_frag_of.cases, auto)
+            cases "(B,fst e_B,p#ps)" rule:is_exec_frag_of.cases, auto,
+            cases "(B,fst e_B,p#ps)" rule:is_exec_frag_of.cases, auto)
     with Cons.hyps(1) obtain e_A' where ih1:"is_exec_of A e_A'"
       and ih2:"trace (ioa.asig A) e_A' = trace (ioa.asig A) ?e_B'"
       and ih3:"last_state e_A' = f ?s" by fastforce
@@ -175,8 +175,8 @@ proof -
     have 1:"is_exec_of B ?e_B'" and 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
       using Cons.prems and Cons.hyps(2)
         by (simp_all add:is_exec_of_def,
-            cases "(B,fst e_B,ps#p)" rule:is_exec_frag_of.cases, auto,
-            cases "(B,fst e_B,ps#p)" rule:is_exec_frag_of.cases, auto)
+            cases "(B,fst e_B,p#ps)" rule:is_exec_frag_of.cases, auto,
+            cases "(B,fst e_B,p#ps)" rule:is_exec_frag_of.cases, auto)
     with Cons.hyps(1) obtain e_A' where ih1:"is_exec_of A e_A'"
       and ih2:"trace (ioa.asig A) e_A' = trace (ioa.asig A) ?e_B'"
       and ih3:"last_state e_A' \<in> f ?s" by fastforce
@@ -247,8 +247,8 @@ proof -
       have 1:"is_exec_of B ?e_B'" and 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
         using Cons.prems and Cons.hyps(2)
           by (simp_all add:is_exec_of_def,
-              cases "(B,fst e_B, ps#p)" rule:is_exec_frag_of.cases, auto,
-              cases "(B,fst e_B, ps#p)" rule:is_exec_frag_of.cases, auto)
+              cases "(B,fst e_B, p#ps)" rule:is_exec_frag_of.cases, auto,
+              cases "(B,fst e_B, p#ps)" rule:is_exec_frag_of.cases, auto)
       from 1 have 3:"reachable B ?s" using last_state_reachable by fast
       obtain e where 4:"fst e \<in> f ?s" and 5:"last_state e = t'" 
       and 6:"is_exec_frag_of A e"
