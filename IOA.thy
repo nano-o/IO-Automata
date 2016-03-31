@@ -211,11 +211,37 @@ record 'a trace_module =
 context IOA
 begin
 
+fun last_state where
+  "last_state (s,[]) = s"
+| "last_state (s,p#ps) = snd p"
+
+inductive is_exec_frag_of_ind::"('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" 
+  for A::"('s, 'a) ioa" 
+  where
+  "is_exec_frag_of_ind A (s, [])"
+| "\<lbrakk>is_exec_frag_of_ind A (s, ps); (last_state (s, ps)) \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p\<rbrakk> \<Longrightarrow> is_exec_frag_of_ind A (s,p#ps)"
+
 fun is_exec_frag_of::"('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" where
   "is_exec_frag_of A (s,p#(p'#ps)) = 
     (snd p' \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p \<and> is_exec_frag_of A (s, (p'#ps)))"
 | "is_exec_frag_of A (s, [p]) = s \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p"
 | "is_exec_frag_of A (s, []) = True"
+
+lemma "is_exec_frag_of A e = is_exec_frag_of_ind A e"
+proof -
+  have "is_exec_frag_of A e \<Longrightarrow> is_exec_frag_of_ind A e"
+  apply (induct rule:is_exec_frag_of.induct, auto)
+        apply (simp add: IOA.is_exec_frag_of_ind.intros(2))
+      apply (simp add: IOA.is_exec_frag_of_ind.intros(1) IOA.is_exec_frag_of_ind.intros(2))
+    apply (simp add: IOA.is_exec_frag_of_ind.intros(1))
+  done
+  moreover
+  have "is_exec_frag_of_ind A e \<Longrightarrow> is_exec_frag_of A e"
+  apply (induct rule:is_exec_frag_of_ind.induct, auto)
+    apply (metis IOA.is_exec_frag_of.simps(1) IOA.is_exec_frag_of.simps(2) IOA.last_state.simps(1) IOA.last_state.simps(2) fst_conv neq_Nil_conv snd_conv)
+  done
+  ultimately show ?thesis by auto
+qed
 
 definition is_exec_of::"('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" where
   "is_exec_of A e \<equiv> fst e \<in> start A \<and> is_exec_frag_of A e"
@@ -292,10 +318,6 @@ definition cons_exec where
 
 definition append_exec where
   "append_exec e e' \<equiv> (fst e, (snd e')@(snd e))"
-
-fun last_state where
-  "last_state (s,[]) = s"
-| "last_state (s,p#ps) = snd p"
 
 lemma last_state_reachable:
   fixes A e
