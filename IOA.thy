@@ -344,7 +344,7 @@ lemma trace_same_ext:
 
 lemma trace_append_is_append_trace:
   fixes e e' sig
-  shows "trace sig (append_exec e' e) = trace sig e' @ trace sig e"
+  shows "trace sig (append_exec e' e) = trace sig e @ trace sig e'"
   by (simp add:append_exec_def trace_def schedule_def filter_act_def)
 
 lemma append_exec_frags_is_exec_frag:
