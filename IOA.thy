@@ -1,7 +1,7 @@
 section {* I/O Automata with Finite-Trace Semantics *}
 
 theory IOA
-imports Main Sequences
+imports Main 
 begin
 
 text {* This theory is inspired by the IOA theory of Olaf Müller *}

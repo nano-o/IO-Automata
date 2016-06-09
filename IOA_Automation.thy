@@ -31,9 +31,9 @@ method instantiate_invs_2 declares invs = (
 method try_solve_ind_case declares invs inv_proofs_defs = (
   instantiate_invs_2,
   (* Now do case analysis on the transition *)
-  ( (match premises in T:"?s \<midarrow>a\<midarrow>?ioa\<longrightarrow> ?t" for a \<Rightarrow> \<open>case_tac a\<close>) | (print_term "''case analysis failed''", fail) ),
+  ( (match premises in T:"?s \<midarrow>a\<midarrow>?ioa\<longrightarrow> ?t" for a \<Rightarrow> \<open>case_tac a\<close>) | (print_term "''case analysis failed''", fail) );
   (* Finally try simp *)
-  (simp_all add:inv_proofs_defs | print_term "''simp_all failed''") )
+  (simp add:inv_proofs_defs ; fail) )
 
 method try_solve_inv2 declares invs inv_proofs_defs = (
   rule invariantI,
