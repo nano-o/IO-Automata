@@ -6,6 +6,7 @@ context IOA begin
 
 context begin
 
+private
 definition ioa_unfolding :: "('s,'a)ioa \<Rightarrow> (('s,'a)execution,'a)ioa" where
   "ioa_unfolding a \<equiv> let
       start = {(s,[]) | s . s \<in> start a};

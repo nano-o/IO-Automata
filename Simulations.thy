@@ -41,6 +41,9 @@ definition
 
 subsection {* A series of lemmas that will be useful in the soundness proofs *}
 
+context begin
+
+private
 lemma step_eq_traces:
   fixes e_B' A e e_A' a t
   defines "e_A \<equiv> append_exec e_A' e" and "e_B \<equiv> cons_exec e_B' (a,t)"
@@ -59,6 +62,7 @@ proof -
   show ?thesis using 1 3 4 by simp
 qed
 
+private
 lemma exec_inc_imp_trace_inc:
   fixes A B
   assumes "ext B = ext A"
@@ -79,6 +83,7 @@ qed
 
 subsection {* Soundness of Refinement Mappings *}
 
+private
 lemma ref_map_execs:
   fixes A::"('sA,'a)ioa" and B::"('sB,'a)ioa" and f::"'sB \<Rightarrow> 'sA" and e_B
   assumes "is_ref_map f B A" and "is_exec_of B e_B"
@@ -145,6 +150,7 @@ theorem ref_map_soundness:
 
 subsection {* Soundness of Forward Simulations *}
 
+private
 lemma forward_sim_execs:
   fixes A::"('sA,'a)ioa" and B::"('sB,'a)ioa" and f::"'sB \<Rightarrow> 'sA set" and e_B
   assumes "is_forward_sim f B A" and "is_exec_of B e_B"
@@ -213,6 +219,7 @@ theorem forward_sim_soundness:
 
 subsection {* Soundness of Backward Simulations *}
 
+private
 lemma backward_sim_execs:
   fixes A::"('sA,'a)ioa" and B::"('sB,'a)ioa" and f::"'sB \<Rightarrow> 'sA set" and e_B
   assumes "is_backward_sim f B A" and "is_exec_of B e_B"
@@ -289,6 +296,8 @@ theorem backward_sim_soundness:
   using assms backward_sim_execs exec_inc_imp_trace_inc by metis
 
 declare trace_match_def[simp del]
+
+end
 
 end
 
