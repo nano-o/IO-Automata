@@ -302,8 +302,7 @@ proof -
   ultimately show ?thesis by blast
 qed
 
-lemmas trace_simps = traces_def is_trace_of_def is_schedule_of_def filter_act_def is_exec_of_def
-  trace_def schedule_def
+lemmas traces_simps = trace_def traces_def is_trace_of_def is_schedule_of_def filter_act_def is_exec_of_def schedule_def
 
 definition proj_trace::"'a trace \<Rightarrow> ('a signature) \<Rightarrow> 'a trace" (infixr "\<bar>" 12) where
   "proj_trace t sig \<equiv> filter (\<lambda> a . a \<in> actions sig) t"

@@ -8,10 +8,14 @@ begin
 context IOA
 begin
 
+definition trace_match where trace_match_def[simp]:
+  "trace_match A a e \<equiv> let tr = trace (ioa.asig A) e in
+                    if a \<in> ext A then tr = [a] else tr = []"
+
 definition refines where
   "refines e s a t A f \<equiv> fst e = f s \<and> last_state e = f t \<and> is_exec_frag_of A e
-            \<and> (let tr = trace (ioa.asig A) e in 
-                if a \<in> ext A then tr = [a] else tr = [])"
+            \<and> trace_match A a e"
+
 definition
   is_ref_map :: "('s1 \<Rightarrow> 's2) \<Rightarrow> ('s1,'a)ioa \<Rightarrow> ('s2,'a)ioa \<Rightarrow> bool" where
   "is_ref_map f B A \<equiv>
@@ -24,8 +28,7 @@ definition
    (\<forall> s \<in> start B . f s \<inter> start A \<noteq> {})
    \<and> (\<forall> s s' t a. s' \<in> f s \<and> s \<midarrow>a\<midarrow>B\<longrightarrow> t \<and> reachable B s
         \<longrightarrow> (\<exists> e . fst e = s' \<and> last_state e \<in> f t \<and> is_exec_frag_of A e
-              \<and> (let tr = trace (ioa.asig A) e in 
-                    if a \<in> ext A then tr = [a] else tr = [])))"
+              \<and> trace_match A a e))"
 
 definition
   is_backward_sim :: "('s1 \<Rightarrow> ('s2 set)) \<Rightarrow> ('s1,'a)ioa \<Rightarrow> ('s2,'a)ioa \<Rightarrow> bool" where
@@ -34,8 +37,7 @@ definition
    \<and> (\<forall> s \<in> start B . f s \<subseteq> start A)
    \<and> (\<forall> s t a t'. t' \<in> f t \<and> s \<midarrow>a\<midarrow>B\<longrightarrow> t \<and> reachable B s
         \<longrightarrow> (\<exists> e . fst e \<in> f s \<and> last_state e = t' \<and> is_exec_frag_of A e
-                \<and> (let tr = trace (ioa.asig A) e in 
-                      if a \<in> ext A then tr = [a] else tr = [])))"
+                \<and> trace_match A a e))"
 
 subsection {* A series of lemmas that will be useful in the soundness proofs *}
 
@@ -49,7 +51,7 @@ lemma step_eq_traces:
 proof -
   have 3:"trace (ioa.asig A) e_B = 
          (if a \<in> ext A then a # (trace (ioa.asig A) e_B') else trace (ioa.asig A) e_B')"
-    using e_B_def by (simp add:trace_def schedule_def filter_act_def cons_exec_def)
+    using e_B_def by (auto simp add:traces_simps cons_exec_def)
   have 4:"trace (ioa.asig A) e_A = 
          (if a \<in> ext A then a # trace (ioa.asig A) e_A' else trace (ioa.asig A) e_A')"
     using 2 trace_append_is_append_trace[of "ioa.asig A" e_A' e] 
@@ -94,7 +96,7 @@ proof -
     hence "is_exec_of A ?e_A" using Nil.prems(1) by (simp add:is_exec_of_def)
     moreover
     have "trace (ioa.asig A) ?e_A = trace (ioa.asig A) e_B" 
-      using Nil.hyps by (simp add:trace_simps)
+      using Nil.hyps by (simp add:traces_simps)
     moreover
     have "last_state ?e_A = f (last_state e_B)" 
       using Nil.hyps by (metis last_state.simps(1) prod.collapse)
@@ -286,6 +288,8 @@ theorem backward_sim_soundness:
   shows "traces B \<subseteq> traces A"
   using assms backward_sim_execs exec_inc_imp_trace_inc by metis
 
-end 
+declare trace_match_def[simp del]
+
+end
 
 end
