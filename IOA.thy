@@ -38,8 +38,8 @@ lemma internal_inter_external:
 
 definition hide_asig where
   "hide_asig asig actns \<equiv>
-    \<lparr>inputs = inputs asig - actns, outputs = outputs asig - actns, 
-      internals = internals asig \<union>actns\<rparr>"
+    \<lparr>inputs = inputs asig - actns, outputs = outputs asig - actns,
+      internals = internals asig \<union> actns\<rparr>"
 
 end
 
@@ -48,7 +48,7 @@ subsection {* I/O Automata *}
 type_synonym
   ('s,'a) transition = "'s \<times> 'a \<times> 's"
 
-record ('s,'a) ioa = 
+record ('s,'a) ioa =
   asig::"'a signature"
   start::"'s set"
   trans::"('s,'a)transition set"

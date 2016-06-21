@@ -12,6 +12,8 @@ named_theorems inv_proofs_defs
 lemma reach_and_inv_imp_p:"\<lbrakk>reachable ioa s; invariant ioa i\<rbrakk> \<Longrightarrow> i s"
 by (auto simp add:invariant_def)
 
+method rm_reachable = (match premises in R[thin]:"reachable ?ioa ?s" \<Rightarrow> \<open>-\<close>)
+
 method instantiate_invs declares invs =
   (match premises in I[thin]:"invariant ?ioa ?inv" and R:"reachable ?ioa ?s" \<Rightarrow> \<open>
     print_fact I, insert reach_and_inv_imp_p[OF R I]\<close>)+
@@ -26,7 +28,7 @@ method instantiate_invs_2 declares invs = (
   ( insert invs,
     instantiate_invs )?,
   (* Get rid of the reachability assumption *)
-  match premises in R[thin]:"reachable ?ioa ?s" \<Rightarrow> \<open>-\<close> )
+  rm_reachable )
 
 method try_solve_ind_case declares invs inv_proofs_defs = (
   instantiate_invs_2,
@@ -37,9 +39,9 @@ method try_solve_ind_case declares invs inv_proofs_defs = (
 
 method try_solve_inv2 declares invs inv_proofs_defs = (
   rule invariantI,
-  ( ( force simp add:inv_proofs_defs, try_solve_ind_case )
-    | ( ( force simp add:inv_proofs_defs, print_term "''inductive case failed''" ) 
-        | ( print_term "''base case failed''", (auto simp add:inv_proofs_defs)[1]) ) ) )
+  ( ( force simp add:inv_proofs_defs, 
+      (try_solve_ind_case | (instantiate_invs_2, print_term "''inductive case failed''")))
+    | ( print_term "''base case failed''", (auto simp add:inv_proofs_defs)[1]) ) )
 
 end 
 
