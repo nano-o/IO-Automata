@@ -101,12 +101,12 @@ proof -
 qed
 
 (*  This one is trickier. In the HOLCF theory, projection on a component does not remove steps but
-    instead results in suttering sequences. Stuttering sequences can be pasted easily.
+    instead results in suttering sequences. Stuttering sequences can be pasted easily. *)
 lemma paste_execs:
-  fixes fam::"('id, ('a,'s)ioa)family" and es::"'id \<Rightarrow> ('s,'a)execution" and t::"'a trace" 
+  fixes fam and es and t::"'a trace" 
   assumes "\<forall> i \<in> ids fam . is_exec_of (memb fam i) (es i)"
     and "\<forall> i \<in> ids fam . let sig_i = ioa.asig (memb fam i) in (t \<bar> sig_i) = trace sig_i (es i)"
   obtains e where "is_exec_of (par fam) e" and "trace (ioa.asig (par fam)) e = t" 
-    and "\<forall> i \<in> ids fam . (e \<downharpoonright> i (ioa.asig (memb fam i))) = es i" *)
+    and "\<forall> i \<in> ids fam . (e \<downharpoonright> i (ioa.asig (memb fam i))) = es i" oops 
 
 end
