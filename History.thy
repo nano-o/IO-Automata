@@ -1,6 +1,13 @@
+section {* History Variables *}
+
 theory History
 imports Simulations IOA_Automation
 begin
+
+text {*
+The concept of unfolding of an IOA is taken from Lynch and Vaandrager's paper: "Forward
+  and Backward Simulations Part 1: Untimed Systems".
+*}
          
 context IOA begin
 
@@ -64,6 +71,8 @@ lemma traces_ioa_unfolding:"traces (ioa_unfolding a) = traces a" using l1 l2 ref
 by (metis (no_types, lifting) ioa.select_convs(1) ioa_unfolding_def set_eq_subset)
 
 definition add_history :: "('s,'a)ioa \<Rightarrow> ('s \<Rightarrow> 'h \<Rightarrow> 'a \<Rightarrow> 's \<Rightarrow> 'h) \<Rightarrow> ('s \<Rightarrow> 'h) \<Rightarrow> ('s\<times>'h,'a)ioa"
+  -- {* @{term add_history} can be used to add hitory state to an IOA, and the theorem below 
+    stipulates that no new traces are introduced by the operation. *}
   where "add_history a f f\<^sub>0 \<equiv> let
       start = {(s,h) . s \<in> start a \<and> h = f\<^sub>0 s};
       trans = {((s,h),act,(s',h')) .  s \<midarrow>act\<midarrow>a\<longrightarrow> s' \<and> h' = f s h act s'}
@@ -132,7 +141,7 @@ lemma l3:"traces (ioa_unfolding a) \<subseteq> IOA.traces (add_history a f f\<^s
 using l4 ref_map_soundness
 by (metis (no_types, lifting) add_history_def ioa.select_convs(1) ioa_unfolding_def) 
 
-theorem "IOA.traces a \<subseteq> IOA.traces (add_history a f f\<^sub>0)"
+theorem hist_soundness:"IOA.traces a \<subseteq> IOA.traces (add_history a f f\<^sub>0)"
 using traces_ioa_unfolding l3 by fast
 
 end
