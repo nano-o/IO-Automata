@@ -9,7 +9,7 @@ context IOA
 begin
 
 definition refines where
-  "refines e s a t A f \<equiv> fst e = f s \<and> last_state e = f t \<and> is_exec_frag A e
+  "refines e s a t A f \<equiv> fst e = f s \<and> last_state e = f t \<and> is_exec_frag_of A e
             \<and> (let tr = trace (ioa.asig A) e in 
                 if a \<in> ext A then tr = [a] else tr = [])"
 definition
@@ -23,7 +23,7 @@ definition
   "is_forward_sim f B A \<equiv>
    (\<forall> s \<in> start B . f s \<inter> start A \<noteq> {})
    \<and> (\<forall> s s' t a. s' \<in> f s \<and> s \<midarrow>a\<midarrow>B\<longrightarrow> t \<and> reachable B s
-        \<longrightarrow> (\<exists> e . fst e = s' \<and> last_state e \<in> f t \<and> is_exec_frag A e
+        \<longrightarrow> (\<exists> e . fst e = s' \<and> last_state e \<in> f t \<and> is_exec_frag_of A e
               \<and> (let tr = trace (ioa.asig A) e in 
                     if a \<in> ext A then tr = [a] else tr = [])))"
 
@@ -33,7 +33,7 @@ definition
    (\<forall> s . f s \<noteq> {}) (* Restricting this to reachable states would suffice *)
    \<and> (\<forall> s \<in> start B . f s \<subseteq> start A)
    \<and> (\<forall> s t a t'. t' \<in> f t \<and> s \<midarrow>a\<midarrow>B\<longrightarrow> t \<and> reachable B s
-        \<longrightarrow> (\<exists> e . fst e \<in> f s \<and> last_state e = t' \<and> is_exec_frag A e
+        \<longrightarrow> (\<exists> e . fst e \<in> f s \<and> last_state e = t' \<and> is_exec_frag_of A e
                 \<and> (let tr = trace (ioa.asig A) e in 
                       if a \<in> ext A then tr = [a] else tr = [])))"
 
@@ -80,7 +80,7 @@ subsection {* Soundness of Refinement Mappings *}
 lemma ref_map_execs:
   fixes A::"('sA,'a)ioa" and B::"('sB,'a)ioa" and f::"'sB \<Rightarrow> 'sA" and e_B
   assumes "is_ref_map f B A" and "is_exec_of B e_B"
-  shows "\<exists> e_A .  is_exec_of A e_A 
+  shows "\<exists> e_A.  is_exec_of A e_A 
     \<and> trace (ioa.asig A) e_A = trace (ioa.asig A) e_B"
 proof -
   note assms(2)
@@ -91,8 +91,7 @@ proof -
     case Nil
     let ?e_A = "(f (fst e_B), [])"
     have "\<And> s . s \<in> start B \<Longrightarrow> f s \<in> start A" using assms(1) by (simp add:is_ref_map_def)
-    hence "is_exec_of A ?e_A" using Nil.prems(1)
-      by (simp add: IOA.is_exec_frag.intros(1) IOA.is_exec_of_def fst_conv)
+    hence "is_exec_of A ?e_A" using Nil.prems(1) by (simp add:is_exec_of_def)
     moreover
     have "trace (ioa.asig A) ?e_A = trace (ioa.asig A) e_B" 
       using Nil.hyps by (simp add:trace_simps)
@@ -105,16 +104,15 @@ proof -
     let ?e_B' = "(fst e_B, ps)"
     let ?s = "last_state ?e_B'" let ?t = "snd p" let ?a = "fst p"
     have 1:"is_exec_of B ?e_B'"
-      by (metis Cons.hyps(2) Cons.prems IOA.cons_exec_def IOA.exec_frag_prefix IOA.is_exec_of_def prod.collapse snd_conv swap_simp) 
+      by (metis Cons.hyps(2) Cons.prems IOA.cons_exec_def IOA.exec_frag_prefix IOA.is_exec_of_def prod.collapse snd_conv swap_simp)
     have 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
-      using Cons.prems Cons.hyps(2) 1
-        by (smt IOA.is_exec_of_def IOA.last_state.simps(1) IOA.last_state.simps(2) fstI is_exec_frag.cases list.distinct(1) list.sel(1) list.sel(3) sndI)  
-    with 1 Cons.hyps(1) obtain e_A' where ih1:"is_exec_of A e_A'"
+      by (smt Cons.hyps(2) Cons.prems IOA.is_exec_frag_of.simps(1) IOA.is_exec_frag_of.simps(2) IOA.is_exec_of_def IOA.last_state.elims fst_conv snd_conv)
+    with Cons.hyps(1) obtain e_A' where ih1:"is_exec_of A e_A'"
       and ih2:"trace (ioa.asig A) e_A' = trace (ioa.asig A) ?e_B'"
-      and ih3:"last_state e_A' = f ?s" by fastforce
+      and ih3:"last_state e_A' = f ?s" using "1" snd_conv by fastforce
     from 1 have 3:"reachable B ?s" using last_state_reachable by fast
     obtain e where 4:"fst e = f ?s" and 5:"last_state e = f ?t" 
-    and 6:"is_exec_frag A e"
+    and 6:"is_exec_frag_of A e"
     and 7:"let tr = trace (ioa.asig A) e in if ?a \<in> ext A 
       then tr = [?a] else tr = []" 
         using 2 and 3 and assms(1) 
@@ -161,8 +159,7 @@ proof -
     with this obtain s' where 1:"s' \<in> f (fst e_B)" and 2:"s' \<in> start A" 
       by (metis Int_iff Nil.prems all_not_in_conv is_exec_of_def)
     let ?e_A = "(s', [])"
-    have "is_exec_of A ?e_A" using 2
-      by (simp add: IOA.is_exec_frag.intros(1) IOA.is_exec_of_def fst_conv) 
+    have "is_exec_of A ?e_A" using 2 by (simp add:is_exec_of_def)
     moreover
     have "trace (ioa.asig A) ?e_A = trace (ioa.asig A) e_B" using Nil.hyps 
       by (simp add:trace_def schedule_def filter_act_def)
@@ -177,14 +174,13 @@ proof -
     have 1:"is_exec_of B ?e_B'"
       by (metis Cons.hyps(2) Cons.prems IOA.cons_exec_def IOA.exec_frag_prefix IOA.is_exec_of_def fst_conv prod.collapse swap_simp) 
     have 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
-      using Cons.prems Cons.hyps(2) 1
-        by (smt IOA.is_exec_of_def IOA.last_state.simps(1) IOA.last_state.simps(2) eq_snd_iff fstI is_exec_frag.cases list.distinct(1) list.sel(1) list.sel(3)) 
+      by (smt Cons.hyps(2) Cons.prems IOA.is_exec_frag_of.simps(1) IOA.is_exec_frag_of.simps(2) IOA.is_exec_of_def IOA.last_state.elims fst_conv snd_conv)  
     with 1 Cons.hyps(1) obtain e_A' where ih1:"is_exec_of A e_A'"
       and ih2:"trace (ioa.asig A) e_A' = trace (ioa.asig A) ?e_B'"
       and ih3:"last_state e_A' \<in> f ?s" by fastforce
     from 1 have 3:"reachable B ?s" using last_state_reachable by fast
     obtain e where 4:"fst e = last_state e_A'" and 5:"last_state e \<in> f ?t" 
-    and 6:"is_exec_frag A e"
+    and 6:"is_exec_frag_of A e"
     and 7:"let tr = trace (ioa.asig A) e in if ?a \<in> ext A then tr = [?a] else tr = []" 
       using 2 3 assms(1) ih3 by (simp add:is_forward_sim_def) 
         (metis prod.collapse prod.inject)
@@ -232,8 +228,7 @@ proof -
       from Nil 1 2 have 3:"s' \<in> start A" 
         by (metis (full_types) is_exec_of_def last_state.simps(1) set_mp surjective_pairing)
       let ?e_A = "(s', [])"
-      have 4:"is_exec_of A ?e_A" using 3
-        by (simp add: IOA.is_exec_frag.intros(1) IOA.is_exec_of_def fst_conv) 
+      have 4:"is_exec_of A ?e_A" using 3 by (simp add:is_exec_of_def) 
       have 5:"trace (ioa.asig A) ?e_A = trace (ioa.asig A) e_B" using Nil.hyps 
         by (simp add:trace_def schedule_def filter_act_def)
       have 6:"last_state ?e_A \<in> f (last_state e_B)" 
@@ -250,11 +245,10 @@ proof -
       have 1:"is_exec_of B ?e_B'"
         by (metis Cons.hyps(2) Cons.prems IOA.cons_exec_def IOA.exec_frag_prefix IOA.is_exec_of_def fst_conv prod.collapse swap_simp)
       have 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
-        using Cons.prems Cons.hyps(2) 1
-          by (smt IOA.is_exec_of_def IOA.last_state.simps(1) IOA.last_state.simps(2) fstI is_exec_frag.cases list.distinct(1) list.sel(1) list.sel(3) sndI)       
+        by (smt Cons.hyps(2) Cons.prems IOA.is_exec_frag_of.simps(1) IOA.is_exec_frag_of.simps(2) IOA.is_exec_of_def IOA.last_state.elims fst_conv snd_conv)
       from 1 have 3:"reachable B ?s" using last_state_reachable by fast
       obtain e where 4:"fst e \<in> f ?s" and 5:"last_state e = t'" 
-      and 6:"is_exec_frag A e"
+      and 6:"is_exec_frag_of A e"
       and 7:"let tr = trace (ioa.asig A) e in 
         if ?a \<in> ext A then tr = [?a] else tr = []" 
         using 2 assms(1) 8 5 3 by (auto simp add: is_backward_sim_def, metis)

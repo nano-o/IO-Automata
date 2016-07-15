@@ -45,31 +45,25 @@ proof -
     qed
     from Cons.prems and Cons.hyps(2) have "(last_state ?e')\<midarrow>(fst p)\<midarrow>A\<longrightarrow>(snd p)"
       apply(simp add:IOA.is_exec_of_def)
-      apply(cases A "(fst e,ps#p)" rule:is_exec_frag.cases)
-      by auto
+        by (metis Executions.IOA.last_state.simps(1) Executions.IOA.last_state.simps(2) IOA.is_exec_frag_of.simps(1) IOA.is_exec_frag_of.simps(2) neq_Nil_conv prod.collapse)
     with ih and Cons.hyps(2) show ?case
       by (metis Executions.IOA.last_state.simps(2) IOA.reachable_n prod.collapse) 
   qed
   thus ?thesis using assms by fastforce
 qed 
 
-thm is_exec_frag.cases
-
 lemma trans_from_last_state:
-  assumes "is_exec_frag A e" and "(last_state e)\<midarrow>a\<midarrow>A\<longrightarrow>s'"
-  shows "is_exec_frag A (cons_exec (a,s') e)"
-    using assms 
-    apply(cases A "(fst e, snd e)" rule:IOA.is_exec_frag.cases)
-    by(auto simp add:cons_exec_def IOA.is_exec_frag.intros(2, 3))
-   
+  assumes "is_exec_frag_of A e" and "(last_state e)\<midarrow>a\<midarrow>A\<longrightarrow>s'"
+  shows "is_exec_frag_of A (cons_exec (a,s') e)"
+    using assms
+      by (metis Executions.IOA.cons_exec_def Executions.IOA.last_state.elims IOA.IOA.cons_exec_def IOA.IOA.last_state.simps(1) IOA.IOA.last_state.simps(2) IOA.trans_from_last_state) 
+
 lemma exec_frag_prefix:
   fixes A p ps
-  assumes "is_exec_frag A (cons_exec p e)"
-  shows "is_exec_frag A e"
-    using assms 
-    apply(cases A e rule:IOA.is_exec_frag.cases)
-    apply (simp add: Executions.IOA.cons_exec_def IOA.IOA.cons_exec_def IOA.exec_frag_prefix)
-    by (auto simp add: IOA.is_exec_frag.intros(1,2,3))
+  assumes "is_exec_frag_of A (cons_exec p e)"
+  shows "is_exec_frag_of A e"
+    using assms
+      by (simp add: Executions.IOA.cons_exec_def IOA.IOA.cons_exec_def IOA.exec_frag_prefix) 
 
 lemma trace_same_ext:
   fixes A B e
@@ -82,34 +76,33 @@ lemma trace_append_is_append_trace:
   shows "trace sig (append_exec e' e) = trace sig e' @ trace sig e"
   by (simp add:append_exec_def trace_def schedule_def filter_act_def)
 
-thm is_exec_frag.induct
-
 lemma append_exec_frags_is_exec_frag:
   fixes e e' A as
-  assumes "is_exec_frag A e'" and "last_state e = fst e'" 
-  and "is_exec_frag A e"
-  shows "is_exec_frag A (append_exec e e')"
+  assumes "is_exec_frag_of A e'" and "last_state e = fst e'" 
+  and "is_exec_frag_of A e"
+  shows "is_exec_frag_of A (append_exec e e')"
 proof -
   from assms show ?thesis 
-  proof (induct e' rule:is_exec_frag.induct)
+  proof (induct e' rule:is_exec_frag_of.induct)
     case (1 s)
-    from "1.prems"(1,2)
-    show ?case by (simp add:append_exec_def)
+    from "1.hyps" "1.prems"(1,2,3)
+    show ?case
+      by (metis (no_types, hide_lams) Executions.IOA.append_exec_def IOA.is_exec_frag_of.simps(1) append_Cons fst_conv fst_swap swap_simp)  
   next
-    case (2 s p)
-    have "last_state e \<midarrow>(fst p)\<midarrow>A\<longrightarrow> snd p" using "2.prems"(1,2) and "2.hyps"
-      using fstI by auto
-    hence "is_exec_frag A (fst e, (snd e)#p)" using "2.prems"(1)
+    case (2 A s p)
+    print_cases
+    have "last_state e \<midarrow>(fst p)\<midarrow>A\<longrightarrow> snd p" using "2.prems"(1,2)  fstI by auto
+    hence "is_exec_frag_of A (fst e, (snd e)#p)" using "2.prems"(1,3)
       by (metis Executions.IOA.cons_exec_def Executions.IOA.trans_from_last_state assms(3) prod.collapse) 
     moreover 
-    have "append_exec e (s, [p]) = (fst e, (snd e)#p)" using "2.hyps"
+    have "append_exec e (s, [p]) = (fst e, (snd e)#p)" using "2.prems"(1,2)
       by (simp add: Executions.IOA.append_exec_def)
     ultimately 
       show ?case by auto
   next
-    case (3 s ps p' p)
+    case (3 A s)
       thus ?case
-        by (metis (no_types, hide_lams) Executions.IOA.append_exec_def IOA.is_exec_frag.simps append_Cons fst_conv snd_conv)
+        by (simp add: Executions.IOA.append_exec_def append_Nil prod.collapse snd_conv)
   qed
 qed
 
@@ -124,10 +117,10 @@ section {* Composition is monotonic with respect to the implementation relation 
 (*  Should also hold with the stuttering version of projection, would even be simpler *)
 lemma last_state_proj:
   fixes fam i e
-  assumes "i \<in> ids fam" and "is_exec_frag (par fam) e"
+  assumes "i \<in> ids fam" and "is_exec_frag_of (par fam) e"
   shows "(last_state e) i = last_state (e \<downharpoonright> i (ioa.asig (memb fam i)))"
 proof -
-  have "is_exec_frag (par fam) e 
+  have "is_exec_frag_of (par fam) e 
         \<Longrightarrow> (last_state e) i = last_state (e \<downharpoonright> i (ioa.asig (memb fam i)))"
   proof (induction "snd e" arbitrary: e) 
     case Nil show ?case 
@@ -135,7 +128,7 @@ proof -
       (metis Executions.IOA.last_state.simps(1) Nil.hyps filter.simps(1) list.simps(8) prod.collapse) 
   next 
     case (Cons p ps e)
-    from "Cons.prems" have 1:"is_exec_frag (par fam) (fst e, ps)"
+    from "Cons.prems" have 1:"is_exec_frag_of (par fam) (fst e, ps)"
       by (metis Cons.hyps(2) Executions.IOA.cons_exec_def Executions.IOA.exec_frag_prefix prod.collapse snd_conv swap_simp)
     from 1 and "Cons.hyps"
       have 2:"(last_state (fst e, ps)) i = last_state ((fst e, ps) \<downharpoonright> i (ioa.asig (memb fam i)))" 
@@ -153,42 +146,40 @@ proof -
           by (simp add:proj_exec_def)
       from False and `i \<in> ids fam` and Cons.prems and Cons.hyps(2) 
         have 4:"last_state (fst e, ps#p) i = last_state (fst e, ps) i" 
-          by  (cases "par fam" "(fst e, snd e)" rule:IOA.is_exec_frag.cases)
+          by (cases "(par fam, fst e, snd e)" rule:IOA.is_exec_frag_of.cases)
               (auto simp add:is_trans_def par_def)
       from 2 3 4 Cons.hyps(2) show ?thesis by simp
     qed
-  qed
+  qed                                                     
   with assms(2) show ?thesis by simp
 qed
 
 lemma proj_execs:
   fixes fam i e
-  assumes "is_exec_frag (par fam) e"
+  assumes "is_exec_frag_of (par fam) e"
   and "i \<in> ids fam"
   defines sig_def:"sig \<equiv> ioa.asig (memb fam i)"
   and A_i_def:"A_i \<equiv> memb fam i"
-  shows "is_exec_frag A_i (e \<downharpoonright> i sig)" (* Here we would have a problem with the stuttering version of projections *)
+  shows "is_exec_frag_of A_i (e \<downharpoonright> i sig)" (* Here we would have a problem with the stuttering version of projections *)
 proof -
-  have "is_exec_frag (par fam) e 
-        \<Longrightarrow> is_exec_frag A_i (e \<downharpoonright> i sig)"
+  have "is_exec_frag_of (par fam) e 
+        \<Longrightarrow> is_exec_frag_of A_i (e \<downharpoonright> i sig)"
   proof (induction "snd e" arbitrary:e)
     case Nil
-    thus ?case 
-      apply (simp add:proj_exec_def)
-      by (simp add: IOA.is_exec_frag.intros(1))
+    thus ?case by (simp add:proj_exec_def)
   next
     case (Cons p ps e)
     let ?e = "(fst e, ps#p)"
     let ?e' = "(fst e, ps)"
     thm Cons.hyps
-    from Cons.prems and Cons.hyps(2) have prems:"is_exec_frag (par fam) ?e" by simp
-    from Cons.hyps have ih:"is_exec_frag (par fam) ?e' 
-                          \<Longrightarrow> is_exec_frag A_i (?e' \<downharpoonright> i sig)" by simp
-    from prems have 0:"is_exec_frag (par fam) ?e'"
+    from Cons.prems and Cons.hyps(2) have prems:"is_exec_frag_of (par fam) ?e" by simp
+    from Cons.hyps have ih:"is_exec_frag_of (par fam) ?e' 
+                          \<Longrightarrow> is_exec_frag_of A_i (?e' \<downharpoonright> i sig)" by simp
+    from prems have 0:"is_exec_frag_of (par fam) ?e'"
       apply(simp add:par_def)
       by (metis (lifting) IOA.IOA.cons_exec_def IOA.IOA.exec_frag_prefix fst_conv snd_conv)
-    from 0 and ih have 1:"is_exec_frag A_i (?e' \<downharpoonright> i sig)" by auto
-    have "is_exec_frag A_i (?e \<downharpoonright> i sig)"
+    from 0 and ih have 1:"is_exec_frag_of A_i (?e' \<downharpoonright> i sig)" by auto
+    have "is_exec_frag_of A_i (?e \<downharpoonright> i sig)"
     proof (cases "fst p \<in> act A_i")
       case False
       hence "(?e \<downharpoonright> i sig) = (?e' \<downharpoonright> i sig)" by (simp add:proj_exec_def sig_def A_i_def)
@@ -197,7 +188,7 @@ proof -
       case True
       from True and prems and `i \<in> ids fam` 
         have 2:"(last_state ?e' i)\<midarrow>(fst p)\<midarrow>A_i\<longrightarrow>(snd p i)"
-          by  (cases "par fam" "?e" rule:IOA.is_exec_frag.cases)
+          by (cases "(par fam, ?e')" rule:is_exec_frag_of.cases)
               (auto simp add:A_i_def is_trans_def par_def split add:split_if_asm)
       from True have 3:"(?e \<downharpoonright> i sig) = cons_exec (fst p, snd p i) (?e' \<downharpoonright> i sig)" 
         by (simp add:proj_exec_def A_i_def sig_def cons_exec_def)
@@ -211,12 +202,12 @@ proof -
 qed
 
 (*  This one is trickier. In the HOLCF theory, projection on a component does not remove steps but
-    instead results in suttering sequences. Stuttering sequences can be pasted easily.
+    instead results in suttering sequences. Stuttering sequences can be pasted easily. *)
 lemma paste_execs:
-  fixes fam::"('id, ('a,'s)ioa)family" and es::"'id \<Rightarrow> ('s,'a)execution" and t::"'a trace" 
+  fixes fam and es and t::"'a trace" 
   assumes "\<forall> i \<in> ids fam . is_exec_of (memb fam i) (es i)"
     and "\<forall> i \<in> ids fam . let sig_i = ioa.asig (memb fam i) in (t \<bar> sig_i) = trace sig_i (es i)"
   obtains e where "is_exec_of (par fam) e" and "trace (ioa.asig (par fam)) e = t" 
-    and "\<forall> i \<in> ids fam . (e \<downharpoonright> i (ioa.asig (memb fam i))) = es i" *)
+    and "\<forall> i \<in> ids fam . (e \<downharpoonright> i (ioa.asig (memb fam i))) = es i"
 
 end
