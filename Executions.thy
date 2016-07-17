@@ -1,5 +1,5 @@
 theory Executions
-imports "/home/nano/Documents/IO-Automata/IOA" "~~/src/HOL/Library/Sublist"
+imports IOA "~~/src/HOL/Library/Sublist"
 begin
 
 (* Author: Giuliano Losa. This theory is an adaptation of the one by Olaf Mueller found in 
@@ -28,7 +28,7 @@ proof -
       by (simp add:proj_exec_def)
       (metis last_state.simps(1) Nil.hyps filter.simps(1) list.simps(8) prod.collapse) 
   next 
-    case (Cons p ps e) print_cases
+    case (Cons p ps e)
     from "Cons.prems" have 1:"is_exec_frag_of (par fam) (fst e, ps)"
       by (metis Cons.hyps(2) is_exec_frag_of.simps(1) is_exec_frag_of.simps(3) list.exhaust surjective_pairing)
     from 1 and "Cons.hyps"
