@@ -8,10 +8,14 @@ begin
 context IOA
 begin
 
+definition trace_match where trace_match_def[simp]:
+  "trace_match A a e \<equiv> let tr = trace (ioa.asig A) e in
+                    if a \<in> ext A then tr = [a] else tr = []"
+
 definition refines where
   "refines e s a t A f \<equiv> fst e = f s \<and> last_state e = f t \<and> is_exec_frag_of A e
-            \<and> (let tr = trace (ioa.asig A) e in 
-                if a \<in> ext A then tr = [a] else tr = [])"
+            \<and> trace_match A a e"
+
 definition
   is_ref_map :: "('s1 \<Rightarrow> 's2) \<Rightarrow> ('s1,'a)ioa \<Rightarrow> ('s2,'a)ioa \<Rightarrow> bool" where
   "is_ref_map f B A \<equiv>
@@ -24,8 +28,7 @@ definition
    (\<forall> s \<in> start B . f s \<inter> start A \<noteq> {})
    \<and> (\<forall> s s' t a. s' \<in> f s \<and> s \<midarrow>a\<midarrow>B\<longrightarrow> t \<and> reachable B s
         \<longrightarrow> (\<exists> e . fst e = s' \<and> last_state e \<in> f t \<and> is_exec_frag_of A e
-              \<and> (let tr = trace (ioa.asig A) e in 
-                    if a \<in> ext A then tr = [a] else tr = [])))"
+              \<and> trace_match A a e))"
 
 definition
   is_backward_sim :: "('s1 \<Rightarrow> ('s2 set)) \<Rightarrow> ('s1,'a)ioa \<Rightarrow> ('s2,'a)ioa \<Rightarrow> bool" where
@@ -34,11 +37,13 @@ definition
    \<and> (\<forall> s \<in> start B . f s \<subseteq> start A)
    \<and> (\<forall> s t a t'. t' \<in> f t \<and> s \<midarrow>a\<midarrow>B\<longrightarrow> t \<and> reachable B s
         \<longrightarrow> (\<exists> e . fst e \<in> f s \<and> last_state e = t' \<and> is_exec_frag_of A e
-                \<and> (let tr = trace (ioa.asig A) e in 
-                      if a \<in> ext A then tr = [a] else tr = [])))"
+                \<and> trace_match A a e))"
 
 subsection {* A series of lemmas that will be useful in the soundness proofs *}
 
+context begin
+
+private
 lemma step_eq_traces:
   fixes e_B' A e e_A' a t
   defines "e_A \<equiv> append_exec e_A' e" and "e_B \<equiv> cons_exec e_B' (a,t)"
@@ -48,15 +53,16 @@ lemma step_eq_traces:
   shows "trace (ioa.asig A) e_A = trace (ioa.asig A) e_B"
 proof -
   have 3:"trace (ioa.asig A) e_B = 
-         (if a \<in> ext A then (trace (ioa.asig A) e_B') # a else trace (ioa.asig A) e_B')"
-    using e_B_def by (simp add:trace_def schedule_def filter_act_def cons_exec_def)
+         (if a \<in> ext A then a # (trace (ioa.asig A) e_B') else trace (ioa.asig A) e_B')"
+    using e_B_def by (auto simp add:traces_simps cons_exec_def)
   have 4:"trace (ioa.asig A) e_A = 
-         (if a \<in> ext A then trace (ioa.asig A) e_A' # a else trace (ioa.asig A) e_A')"
+         (if a \<in> ext A then a # trace (ioa.asig A) e_A' else trace (ioa.asig A) e_A')"
     using 2 trace_append_is_append_trace[of "ioa.asig A" e_A' e] 
-      by(auto simp add:e_A_def tr_def split add:split_if_asm)
+      by (auto simp add:e_A_def tr_def split add:split_if_asm)
   show ?thesis using 1 3 4 by simp
 qed
 
+private
 lemma exec_inc_imp_trace_inc:
   fixes A B
   assumes "ext B = ext A"
@@ -77,10 +83,11 @@ qed
 
 subsection {* Soundness of Refinement Mappings *}
 
+private
 lemma ref_map_execs:
   fixes A::"('sA,'a)ioa" and B::"('sB,'a)ioa" and f::"'sB \<Rightarrow> 'sA" and e_B
   assumes "is_ref_map f B A" and "is_exec_of B e_B"
-  shows "\<exists> e_A.  is_exec_of A e_A 
+  shows "\<exists> e_A .  is_exec_of A e_A 
     \<and> trace (ioa.asig A) e_A = trace (ioa.asig A) e_B"
 proof -
   note assms(2)
@@ -94,7 +101,7 @@ proof -
     hence "is_exec_of A ?e_A" using Nil.prems(1) by (simp add:is_exec_of_def)
     moreover
     have "trace (ioa.asig A) ?e_A = trace (ioa.asig A) e_B" 
-      using Nil.hyps by (simp add:trace_simps)
+      using Nil.hyps by (simp add:traces_simps)
     moreover
     have "last_state ?e_A = f (last_state e_B)" 
       using Nil.hyps by (metis last_state.simps(1) prod.collapse)
@@ -103,13 +110,14 @@ proof -
     case (Cons p ps e_B)
     let ?e_B' = "(fst e_B, ps)"
     let ?s = "last_state ?e_B'" let ?t = "snd p" let ?a = "fst p"
-    have 1:"is_exec_of B ?e_B'"
-      by (metis Cons.hyps(2) Cons.prems IOA.cons_exec_def IOA.exec_frag_prefix IOA.is_exec_of_def prod.collapse snd_conv swap_simp)
-    have 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
-      by (smt Cons.hyps(2) Cons.prems IOA.is_exec_frag_of.simps(1) IOA.is_exec_frag_of.simps(2) IOA.is_exec_of_def IOA.last_state.elims fst_conv snd_conv)
+    have 1:"is_exec_of B ?e_B'" and 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
+      using Cons.prems and Cons.hyps(2)
+        by (simp_all add:is_exec_of_def,
+            cases "(B,fst e_B,p#ps)" rule:is_exec_frag_of.cases, auto,
+            cases "(B,fst e_B,p#ps)" rule:is_exec_frag_of.cases, auto)
     with Cons.hyps(1) obtain e_A' where ih1:"is_exec_of A e_A'"
       and ih2:"trace (ioa.asig A) e_A' = trace (ioa.asig A) ?e_B'"
-      and ih3:"last_state e_A' = f ?s" using "1" snd_conv by fastforce
+      and ih3:"last_state e_A' = f ?s" by fastforce
     from 1 have 3:"reachable B ?s" using last_state_reachable by fast
     obtain e where 4:"fst e = f ?s" and 5:"last_state e = f ?t" 
     and 6:"is_exec_frag_of A e"
@@ -142,6 +150,7 @@ theorem ref_map_soundness:
 
 subsection {* Soundness of Forward Simulations *}
 
+private
 lemma forward_sim_execs:
   fixes A::"('sA,'a)ioa" and B::"('sB,'a)ioa" and f::"'sB \<Rightarrow> 'sA set" and e_B
   assumes "is_forward_sim f B A" and "is_exec_of B e_B"
@@ -171,11 +180,12 @@ proof -
     case (Cons p ps e_B)
     let ?e_B' = "(fst e_B, ps)"
     let ?s = "last_state ?e_B'" let ?t = "snd p" let ?a = "fst p"
-    have 1:"is_exec_of B ?e_B'"
-      by (metis Cons.hyps(2) Cons.prems IOA.cons_exec_def IOA.exec_frag_prefix IOA.is_exec_of_def fst_conv prod.collapse swap_simp) 
-    have 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
-      by (smt Cons.hyps(2) Cons.prems IOA.is_exec_frag_of.simps(1) IOA.is_exec_frag_of.simps(2) IOA.is_exec_of_def IOA.last_state.elims fst_conv snd_conv)  
-    with 1 Cons.hyps(1) obtain e_A' where ih1:"is_exec_of A e_A'"
+    have 1:"is_exec_of B ?e_B'" and 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
+      using Cons.prems and Cons.hyps(2)
+        by (simp_all add:is_exec_of_def,
+            cases "(B,fst e_B,p#ps)" rule:is_exec_frag_of.cases, auto,
+            cases "(B,fst e_B,p#ps)" rule:is_exec_frag_of.cases, auto)
+    with Cons.hyps(1) obtain e_A' where ih1:"is_exec_of A e_A'"
       and ih2:"trace (ioa.asig A) e_A' = trace (ioa.asig A) ?e_B'"
       and ih3:"last_state e_A' \<in> f ?s" by fastforce
     from 1 have 3:"reachable B ?s" using last_state_reachable by fast
@@ -209,6 +219,7 @@ theorem forward_sim_soundness:
 
 subsection {* Soundness of Backward Simulations *}
 
+private
 lemma backward_sim_execs:
   fixes A::"('sA,'a)ioa" and B::"('sB,'a)ioa" and f::"'sB \<Rightarrow> 'sA set" and e_B
   assumes "is_backward_sim f B A" and "is_exec_of B e_B"
@@ -228,7 +239,7 @@ proof -
       from Nil 1 2 have 3:"s' \<in> start A" 
         by (metis (full_types) is_exec_of_def last_state.simps(1) set_mp surjective_pairing)
       let ?e_A = "(s', [])"
-      have 4:"is_exec_of A ?e_A" using 3 by (simp add:is_exec_of_def) 
+      have 4:"is_exec_of A ?e_A" using 3 by (simp add:is_exec_of_def)
       have 5:"trace (ioa.asig A) ?e_A = trace (ioa.asig A) e_B" using Nil.hyps 
         by (simp add:trace_def schedule_def filter_act_def)
       have 6:"last_state ?e_A \<in> f (last_state e_B)" 
@@ -242,10 +253,11 @@ proof -
       let ?s = "last_state ?e_B'" let ?t = "snd p" let ?a = "fst p"
       have 5:"?t = last_state e_B" using Cons.hyps(2) 
         by (metis last_state.simps(2) prod.collapse)
-      have 1:"is_exec_of B ?e_B'"
-        by (metis Cons.hyps(2) Cons.prems IOA.cons_exec_def IOA.exec_frag_prefix IOA.is_exec_of_def fst_conv prod.collapse swap_simp)
-      have 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
-        by (smt Cons.hyps(2) Cons.prems IOA.is_exec_frag_of.simps(1) IOA.is_exec_frag_of.simps(2) IOA.is_exec_of_def IOA.last_state.elims fst_conv snd_conv)
+      have 1:"is_exec_of B ?e_B'" and 2:"?s\<midarrow>?a\<midarrow>B\<longrightarrow>?t"
+        using Cons.prems and Cons.hyps(2)
+          by (simp_all add:is_exec_of_def,
+              cases "(B,fst e_B, p#ps)" rule:is_exec_frag_of.cases, auto,
+              cases "(B,fst e_B, p#ps)" rule:is_exec_frag_of.cases, auto)
       from 1 have 3:"reachable B ?s" using last_state_reachable by fast
       obtain e where 4:"fst e \<in> f ?s" and 5:"last_state e = t'" 
       and 6:"is_exec_frag_of A e"
@@ -283,6 +295,10 @@ theorem backward_sim_soundness:
   shows "traces B \<subseteq> traces A"
   using assms backward_sim_execs exec_inc_imp_trace_inc by metis
 
-end 
+declare trace_match_def[simp del]
+
+end
+
+end
 
 end

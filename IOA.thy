@@ -1,19 +1,17 @@
 section {* I/O Automata with Finite-Trace Semantics *}
 
 theory IOA
-imports Main Sequences
+imports Main 
 begin
 
 text {* This theory is inspired by the IOA theory of Olaf Müller *}
-
-locale IOA = Sequences
 
 record 'a signature =
   inputs::"'a set"
   outputs::"'a set"
   internals::"'a set"
 
-context IOA
+locale IOA
 begin 
 
 subsection {* Signatures *}
@@ -28,10 +26,10 @@ definition locals :: "'a signature \<Rightarrow> 'a set" where
   "locals asig \<equiv> internals asig \<union> outputs asig"
 
 definition is_asig :: "'a signature \<Rightarrow> bool" where
-  "is_asig asig \<equiv>
-     inputs asig \<inter> outputs asig = {} \<and>
-     outputs asig \<inter> internals asig = {} \<and>
-     inputs asig \<inter> internals asig = {}"
+  "is_asig triple \<equiv>
+     inputs triple \<inter> outputs triple = {} \<and>
+     outputs triple \<inter> internals triple = {} \<and>
+     inputs triple \<inter> internals triple = {}"
 
 lemma internal_inter_external:
   assumes "is_asig sig"
@@ -40,7 +38,7 @@ lemma internal_inter_external:
 
 definition hide_asig where
   "hide_asig asig actns \<equiv>
-    \<lparr>inputs = inputs asig - actns, outputs = outputs asig - actns, 
+    \<lparr>inputs = inputs asig - actns, outputs = outputs asig - actns,
       internals = internals asig \<union> actns\<rparr>"
 
 end
@@ -48,12 +46,12 @@ end
 subsection {* I/O Automata *}
 
 type_synonym
-  ('s, 'a) transition = "'s \<times> 'a \<times> 's"
+  ('s,'a) transition = "'s \<times> 'a \<times> 's"
 
-record ('s, 'a) ioa = 
+record ('s,'a) ioa =
   asig::"'a signature"
   start::"'s set"
-  trans::"('s, 'a)transition set"
+  trans::"('s,'a)transition set"
 
 context IOA 
 begin
@@ -103,8 +101,8 @@ definition invariant where
 
 theorem invariantI:
   fixes A P
-  assumes "\<And> s . s \<in> start A \<Longrightarrow> P s"
-  and "\<And> s t a . \<lbrakk>reachable A s; P s; s \<midarrow>a\<midarrow>A\<longrightarrow> t\<rbrakk> \<Longrightarrow> P t"
+  assumes c1:"\<And> s . s \<in> start A \<Longrightarrow> P s"
+  and c2:"\<And> s t a . \<lbrakk>reachable A s; P s; s \<midarrow>a\<midarrow>A\<longrightarrow> t\<rbrakk> \<Longrightarrow> P t"
   shows "invariant A P"
 proof -
   { fix s
@@ -213,25 +211,41 @@ record 'a trace_module =
 context IOA
 begin
 
+fun last_state where
+  "last_state (s,[]) = s"
+| "last_state (s,p#ps) = snd p"
+
+inductive is_exec_frag_of_ind::"('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" 
+  for A::"('s, 'a) ioa" 
+  where
+  "is_exec_frag_of_ind A (s, [])"
+| "\<lbrakk>is_exec_frag_of_ind A (s, ps); (last_state (s, ps)) \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p\<rbrakk> \<Longrightarrow> is_exec_frag_of_ind A (s,p#ps)"
+
 fun is_exec_frag_of::"('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" where
-  "is_exec_frag_of A (s,(ps#p')#p) = 
-    (snd p' \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p \<and> is_exec_frag_of A (s, (ps#p')))"
+  "is_exec_frag_of A (s,p#(p'#ps)) = 
+    (snd p' \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p \<and> is_exec_frag_of A (s, (p'#ps)))"
 | "is_exec_frag_of A (s, [p]) = s \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p"
 | "is_exec_frag_of A (s, []) = True"
 
-(*inductive is_exec_frag::"('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" 
-  for A::"('s, 'a) ioa" 
-  where
-  "is_exec_frag A (s, [])"
-  |"\<lbrakk>s \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p\<rbrakk> \<Longrightarrow> is_exec_frag A (s, [p])"
-  |"\<lbrakk>is_exec_frag A (s, (ps#p')); snd p' \<midarrow>fst p\<midarrow>A\<longrightarrow> snd p\<rbrakk> \<Longrightarrow> is_exec_frag A (s,(ps#p')#p)"*)
-
-inductive exec_frags :: "('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" for A where
-  "exec_frags A (s,[])"
+lemma "is_exec_frag_of A e = is_exec_frag_of_ind A e"
+proof -
+  have "is_exec_frag_of A e \<Longrightarrow> is_exec_frag_of_ind A e"
+  apply (induct rule:is_exec_frag_of.induct, auto)
+        apply (simp add: IOA.is_exec_frag_of_ind.intros(2))
+      apply (simp add: IOA.is_exec_frag_of_ind.intros(1) IOA.is_exec_frag_of_ind.intros(2))
+    apply (simp add: IOA.is_exec_frag_of_ind.intros(1))
+  done
+  moreover
+  have "is_exec_frag_of_ind A e \<Longrightarrow> is_exec_frag_of A e"
+  apply (induct rule:is_exec_frag_of_ind.induct, auto)
+    apply (metis IOA.is_exec_frag_of.simps(1) IOA.is_exec_frag_of.simps(2) IOA.last_state.simps(1) IOA.last_state.simps(2) fst_conv neq_Nil_conv snd_conv)
+  done
+  ultimately show ?thesis by auto
+qed
 
 definition is_exec_of::"('s,'a)ioa \<Rightarrow> ('s,'a)execution \<Rightarrow> bool" where
   "is_exec_of A e \<equiv> fst e \<in> start A \<and> is_exec_frag_of A e"
-  
+
 definition filter_act where
   "filter_act \<equiv> map fst"
 
@@ -284,12 +298,11 @@ proof -
     hence "trace (ioa.asig A) e \<in> traces A"
       by (auto simp add:trace_def schedule_def traces_def 
           is_trace_of_def is_schedule_of_def is_exec_of_def)
-         (metis (full_types) prod.collapse) }
+      (metis prod.collapse) }
   ultimately show ?thesis by blast
 qed
 
-lemmas trace_simps = traces_def is_trace_of_def is_schedule_of_def filter_act_def is_exec_of_def
-  trace_def schedule_def
+lemmas traces_simps = trace_def traces_def is_trace_of_def is_schedule_of_def filter_act_def is_exec_of_def schedule_def
 
 definition proj_trace::"'a trace \<Rightarrow> ('a signature) \<Rightarrow> 'a trace" (infixr "\<bar>" 12) where
   "proj_trace t sig \<equiv> filter (\<lambda> a . a \<in> actions sig) t"
@@ -300,14 +313,10 @@ definition ioa_implements :: "('s1,'a)ioa \<Rightarrow> ('s2,'a)ioa \<Rightarrow
 subsection {* Operations on Executions *}
 
 definition cons_exec where
-  "cons_exec e p \<equiv> (fst e, (snd e)#p)"
+  "cons_exec e p \<equiv> (fst e, p#(snd e))"
 
 definition append_exec where
-  "append_exec e e' \<equiv> (fst e, (snd e)@(snd e'))"
-
-fun last_state where
-  "last_state (s,[]) = s"
-| "last_state (s,ps#p) = snd p"
+  "append_exec e e' \<equiv> (fst e, (snd e')@(snd e))"
 
 lemma last_state_reachable:
   fixes A e
@@ -330,7 +339,7 @@ proof -
       with Cons.hyps(1) show ?thesis by auto
     qed
     from Cons.prems and Cons.hyps(2) have "(last_state ?e')\<midarrow>(fst p)\<midarrow>A\<longrightarrow>(snd p)"
-      by (simp add:is_exec_of_def) (cases "(A,fst e,ps#p)" rule:is_exec_frag_of.cases, auto)
+      by (simp add:is_exec_of_def) (cases "(A,fst e,p#ps)" rule:is_exec_frag_of.cases, auto)
     with ih and Cons.hyps(2) show ?case
       by (metis last_state.simps(2) reachable.simps surjective_pairing)
   qed
@@ -339,8 +348,8 @@ qed
 
 lemma trans_from_last_state:
   assumes "is_exec_frag_of A e" and "(last_state e)\<midarrow>a\<midarrow>A\<longrightarrow>s'"
-  shows "is_exec_frag_of A (cons_exec e (a,s'))"
-   using assms by (cases "(A, fst e, snd e)" rule:is_exec_frag_of.cases, auto simp add:cons_exec_def)
+  shows "is_exec_frag_of A (cons_exec e  (a,s'))"
+    using assms by (cases "(A, fst e, snd e)" rule:is_exec_frag_of.cases, auto simp add:cons_exec_def)
 
 lemma exec_frag_prefix:
   fixes A p ps
@@ -356,7 +365,7 @@ lemma trace_same_ext:
 
 lemma trace_append_is_append_trace:
   fixes e e' sig
-  shows "trace sig (append_exec e' e) = trace sig e' @ trace sig e"
+  shows "trace sig (append_exec e' e) = trace sig e @ trace sig e'"
   by (simp add:append_exec_def trace_def schedule_def filter_act_def)
 
 lemma append_exec_frags_is_exec_frag:
@@ -374,18 +383,18 @@ proof -
     case (2 A p)
     have "last_state e \<midarrow>(fst p)\<midarrow>A\<longrightarrow> snd p" using "2.prems"(2,3) and "2.hyps" 
       by (metis is_exec_frag_of.simps(2) prod.collapse)
-    hence "is_exec_frag_of A (fst e, (snd e)#p)" using "2.prems"(1) 
+    hence "is_exec_frag_of A (fst e, p#(snd e))" using "2.prems"(1) 
       by (metis cons_exec_def prod.collapse trans_from_last_state)
     moreover 
-    have "append_exec e e' = (fst e, (snd e)#p)" using "2.hyps" 
+    have "append_exec e e' = (fst e, p#(snd e))" using "2.hyps" 
       by (metis append_Cons append_Nil append_exec_def)
     ultimately 
     show ?case by auto
   next
-    case (1 A ps p' p e')
-    have "is_exec_frag_of A (fst e, (snd e)@((ps#p')#p))"
+    case (1 A p p' ps e')
+    have "is_exec_frag_of A (fst e, (p#(p'#ps))@(snd e))"
     proof -
-      have "is_exec_frag_of A (fst e, (snd e)@(ps#p'))" 
+      have "is_exec_frag_of A (fst e, (p'#ps)@(snd e))" 
         by (metis "1.hyps" "1.prems" append_exec_def cons_exec_def 
             exec_frag_prefix fst_conv prod_eqI snd_conv)
       moreover
@@ -393,7 +402,7 @@ proof -
         by (metis is_exec_frag_of.simps(1) prod.collapse)
       ultimately show ?thesis by simp
     qed
-    moreover have "append_exec e e' = (fst e, (snd e)@((ps#p')#p))" 
+    moreover have "append_exec e e' = (fst e, (p#(p'#ps))@(snd e))" 
       by (metis "1.hyps"(2) append_exec_def)
     ultimately show ?case by simp
   qed
@@ -407,7 +416,16 @@ lemma last_state_of_append:
 
 subsection {* Composition is monotonic with respect to the implementation relation *}
 
-(* TODO! See Executions.thy *)
+(*
+lemma 
+  assumes "t \<in> traces (A\<parallel>B)"
+  shows "(t \<bar> (ioa.asig A)) \<in> traces A"
+proof -
+  { fix e
+    assume "is_exec_frag_of (A\<parallel>B) e"
+    have "is_exec_frag_of A"
+*)
+
 theorem monotonicity_fam:
   fixes fam1 fam2
   assumes "is_ioa_fam fam1" and "is_ioa_fam fam2"
@@ -419,4 +437,3 @@ oops
 end
 
 end
-
