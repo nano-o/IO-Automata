@@ -58,7 +58,7 @@ proof -
   have 4:"trace (ioa.asig A) e_A = 
          (if a \<in> ext A then a # trace (ioa.asig A) e_A' else trace (ioa.asig A) e_A')"
     using 2 trace_append_is_append_trace[of "ioa.asig A" e_A' e] 
-      by (auto simp add:e_A_def tr_def split add:split_if_asm)
+      by (auto simp add:e_A_def tr_def split:if_split_asm)
   show ?thesis using 1 3 4 by simp
 qed
 

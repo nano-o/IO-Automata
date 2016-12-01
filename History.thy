@@ -48,8 +48,8 @@ proof -
   moreover
   { fix s s' t act
     assume "s' \<in> hist_fwd_sim a s" and "s \<midarrow>act\<midarrow>a\<longrightarrow> t" and "reachable a s"
-    def t' \<equiv> "cons_exec s' (act,t)"
-    def e \<equiv> "(s',[(act,t')])"
+    define t' where  "t' \<equiv> cons_exec s' (act,t)"
+    define e where "e \<equiv> (s',[(act,t')])"
     have tr:"s' \<midarrow>act\<midarrow>(ioa_unfolding a)\<longrightarrow> t'" and next_in_image:"t' \<in> hist_fwd_sim a t"
     proof -
       show "s' \<midarrow>act\<midarrow>(ioa_unfolding a)\<longrightarrow> t'" using \<open>s \<midarrow>act\<midarrow>a\<longrightarrow> t\<close> t'_def \<open>s' \<in> hist_fwd_sim a s\<close>
@@ -62,8 +62,8 @@ proof -
     have fst:"fst e = s'" and last:"last_state e = t'" by (auto simp add:e_def)
     have trace_match:"trace_match (ioa_unfolding a) act e" 
       by (auto simp add:trace_match_def Let_def ioa_unfolding_def traces_simps e_def) 
-    note next_in_image is_exec fst last trace_match}
-  ultimately show ?thesis by (smt IOA.is_forward_sim_def)
+    note next_in_image is_exec fst last trace_match }
+  ultimately show ?thesis unfolding is_forward_sim_def by metis
 qed
 
 private
