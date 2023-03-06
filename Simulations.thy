@@ -1,5 +1,5 @@
-section {* Definition and Soundness of Refinement Mappings,
-  Forward Simulations, and Backward Simulations *}
+section \<open>Definition and Soundness of Refinement Mappings,
+  Forward Simulations, and Backward Simulations\<close>
 
 theory Simulations
 imports IOA
@@ -39,7 +39,7 @@ definition
         \<longrightarrow> (\<exists> e . fst e \<in> f s \<and> last_state e = t' \<and> is_exec_frag_of A e
                 \<and> trace_match A a e))"
 
-subsection {* A series of lemmas that will be useful in the soundness proofs *}
+subsection "A series of lemmas that will be useful in the soundness proofs"
 
 context begin
 
@@ -81,7 +81,7 @@ proof -
   thus ?thesis by fast
 qed
 
-subsection {* Soundness of Refinement Mappings *}
+subsection "Soundness of Refinement Mappings"
 
 private
 lemma ref_map_execs:
@@ -148,7 +148,7 @@ theorem ref_map_soundness:
   shows "traces B \<subseteq> traces A"
   using assms ref_map_execs exec_inc_imp_trace_inc by metis
 
-subsection {* Soundness of Forward Simulations *}
+subsection "Soundness of Forward Simulations"
 
 private
 lemma forward_sim_execs:
@@ -217,7 +217,7 @@ theorem forward_sim_soundness:
   shows "traces B \<subseteq> traces A"
   using assms forward_sim_execs exec_inc_imp_trace_inc by metis
 
-subsection {* Soundness of Backward Simulations *}
+subsection "Soundness of Backward Simulations"
 
 private
 lemma backward_sim_execs:

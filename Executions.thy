@@ -13,7 +13,7 @@ definition proj_exec  ("_ \<downharpoonright> _ _") where
   "proj_exec e i sig \<equiv> 
     (fst e i, map (\<lambda> p . (fst p, snd p i)) (filter (\<lambda> p . fst p \<in> actions sig) (snd e)))"
 
-section {* Composition is monotonic with respect to the implementation relation *}
+section "Composition is monotonic with respect to the implementation relation"
 
 (*  Should also hold with the stuttering version of projection, would even be simpler *)
 lemma last_state_proj:
@@ -88,7 +88,7 @@ proof -
       from True and prems and `i \<in> ids fam` 
         have 2:"(last_state ?e' i)\<midarrow>(fst p)\<midarrow>A_i\<longrightarrow>(snd p i)"
           by  (cases "(par fam, ?e')" rule:is_exec_frag_of.cases)
-              (auto simp add:A_i_def is_trans_def par_def split add:split_if_asm)
+              (auto simp add:A_i_def is_trans_def par_def split: if_splits)
       from True have 3:"(?e \<downharpoonright> i sig) = cons_exec  (?e' \<downharpoonright> i sig) (fst p, snd p i)" 
         by (simp add:proj_exec_def A_i_def sig_def cons_exec_def)
       from `i \<in> ids fam` and last_state_proj and 0 
@@ -107,6 +107,6 @@ lemma paste_execs:
   assumes "\<forall> i \<in> ids fam . is_exec_of (memb fam i) (es i)"
     and "\<forall> i \<in> ids fam . let sig_i = ioa.asig (memb fam i) in (t \<bar> sig_i) = trace sig_i (es i)"
   obtains e where "is_exec_of (par fam) e" and "trace (ioa.asig (par fam)) e = t" 
-    and "\<forall> i \<in> ids fam . (e \<downharpoonright> i (ioa.asig (memb fam i))) = es i" oops 
+    and "\<forall> i \<in> ids fam . (e \<downharpoonright> i (ioa.asig (memb fam i))) = es i" oops
 
 end

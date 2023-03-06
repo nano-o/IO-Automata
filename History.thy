@@ -1,13 +1,13 @@
-section {* History Variables *}
+section "History Variables"
 
 theory History
 imports Simulations IOA_Automation
 begin
 
-text {*
+text \<open>
 The concept of unfolding of an IOA is taken from Lynch and Vaandrager's paper: "Forward
   and Backward Simulations Part 1: Untimed Systems".
-*}
+\<close>
          
 context IOA begin
 
@@ -41,7 +41,7 @@ definition hist_fwd_sim :: "('s,'a)ioa \<Rightarrow> 's \<Rightarrow> (('s,'a)ex
 private                              
 lemma l2:"is_forward_sim (hist_fwd_sim a) a (ioa_unfolding a)"
 proof -
-  text {* The base case *}
+  text "The base case"
   { fix s assume "s \<in> start a"
     hence "hist_fwd_sim a s \<inter> start (ioa_unfolding a) \<noteq> {}"
     by (auto simp add: hist_fwd_sim_def ioa_unfolding_def is_exec_of_def Int_def) }
@@ -71,8 +71,8 @@ lemma traces_ioa_unfolding:"traces (ioa_unfolding a) = traces a" using l1 l2 ref
 by (metis (no_types, lifting) ioa.select_convs(1) ioa_unfolding_def set_eq_subset)
 
 definition add_history :: "('s,'a)ioa \<Rightarrow> ('s \<Rightarrow> 'h \<Rightarrow> 'a \<Rightarrow> 's \<Rightarrow> 'h) \<Rightarrow> ('s \<Rightarrow> 'h) \<Rightarrow> ('s\<times>'h,'a)ioa"
-  -- {* @{term add_history} can be used to add hitory state to an IOA, and the theorem below 
-    stipulates that no new traces are introduced by the operation. *}
+  \<comment> \<open> @{term add_history} can be used to add hitory state to an IOA, and the theorem below 
+    stipulates that no new traces are introduced by the operation.\<close>
   where "add_history a f f\<^sub>0 \<equiv> let
       start = {(s,h) . s \<in> start a \<and> h = f\<^sub>0 s};
       trans = {((s,h),act,(s',h')) .  s \<midarrow>act\<midarrow>a\<longrightarrow> s' \<and> h' = f s h act s'}

@@ -5,9 +5,9 @@ begin
 context IOA begin
 
 named_theorems invs
-  -- "named theorem for use by the tactics below"
+  \<comment> \<open>named theorem for use by the tactics below\<close>
 named_theorems inv_proofs_defs
-  -- "definitions to unfold"
+  \<comment> \<open>definitions to unfold\<close>
 
 lemma reach_and_inv_imp_p:"\<lbrakk>reachable ioa s; invariant ioa i\<rbrakk> \<Longrightarrow> i s"
 by (auto simp add:invariant_def)

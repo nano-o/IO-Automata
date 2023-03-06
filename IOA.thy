@@ -1,10 +1,10 @@
-section {* I/O Automata with Finite-Trace Semantics *}
+section \<open>I/O Automata with Finite-Trace Semantics\<close>
 
 theory IOA
 imports Main 
 begin
 
-text {* This theory is inspired by the IOA theory of Olaf Müller *}
+text \<open>This theory is inspired by the IOA theory of Olaf Müller\<close>
 
 record 'a signature =
   inputs::"'a set"
@@ -14,7 +14,7 @@ record 'a signature =
 locale IOA
 begin 
 
-subsection {* Signatures *}
+subsection "Signatures"
 
 definition actions :: "'a signature \<Rightarrow> 'a set" where
   "actions asig \<equiv> inputs asig \<union> outputs asig \<union> internals asig"
@@ -43,7 +43,7 @@ definition hide_asig where
 
 end
 
-subsection {* I/O Automata *}
+subsection "I/O Automata"
 
 type_synonym
   ('s,'a) transition = "'s \<times> 'a \<times> 's"
@@ -87,7 +87,7 @@ definition rename where
    start = start A,
    trans = {tr. \<exists> x . ren (fst (snd tr)) = Some x \<and> (fst tr) \<midarrow>x\<midarrow>A\<longrightarrow> (snd (snd tr))}\<rparr>"
 
-text {* Reachable states and invariants *}
+text "Reachable states and invariants"
 
 inductive
   reachable :: "('s,'a) ioa \<Rightarrow> 's \<Rightarrow> bool"
@@ -122,7 +122,7 @@ qed
 
 end
 
-subsection {* Composition of Families of I/O Automata *}
+subsection "Composition of Families of I/O Automata"
 
 record ('id, 'a) family =
   ids :: "'id set"
@@ -191,7 +191,7 @@ lemmas ioa_simps = rename_def rename_set_def is_trans_def is_ioa_def par_def
 
 end
 
-subsection {* Executions and Traces *}
+subsection "Executions and Traces"
 
 type_synonym
    ('s,'a)pairs = "('a\<times>'s) list"
@@ -310,7 +310,7 @@ definition proj_trace::"'a trace \<Rightarrow> ('a signature) \<Rightarrow> 'a t
 definition ioa_implements :: "('s1,'a)ioa \<Rightarrow> ('s2,'a)ioa \<Rightarrow> bool"   (infixr "=<|" 12) where
   "A =<| B \<equiv> inp A = inp B \<and> out A = out B \<and> traces A \<subseteq> traces B"
 
-subsection {* Operations on Executions *}
+subsection "Operations on Executions"
 
 definition cons_exec where
   "cons_exec e p \<equiv> (fst e, p#(snd e))"
@@ -414,17 +414,7 @@ lemma last_state_of_append:
   shows "last_state (append_exec e e') = last_state e'"
   using assms by (cases e' rule:last_state.cases, auto simp add:append_exec_def)
 
-subsection {* Composition is monotonic with respect to the implementation relation *}
-
-(*
-lemma 
-  assumes "t \<in> traces (A\<parallel>B)"
-  shows "(t \<bar> (ioa.asig A)) \<in> traces A"
-proof -
-  { fix e
-    assume "is_exec_frag_of (A\<parallel>B) e"
-    have "is_exec_frag_of A"
-*)
+subsection "Composition is monotonic with respect to the implementation relation"
 
 theorem monotonicity_fam:
   fixes fam1 fam2
