@@ -1,5 +1,5 @@
 theory IOA_Automation
-imports IOA  "~~/src/HOL/Eisbach/Eisbach_Tools"
+imports IOA "HOL-Eisbach.Eisbach_Tools"
 begin
 
 context IOA begin
