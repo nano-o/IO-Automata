@@ -5,8 +5,6 @@ begin
 (* Author: Giuliano Losa. This theory is an adaptation of the one by Olaf Mueller found in 
   Isabelle/HOLCF *)
 
-context IOA begin
-
 declare Let_def[simp]
 
 definition proj_exec  ("_ \<downharpoonright> _ _") where
@@ -48,7 +46,7 @@ proof -
       from False and `i \<in> ids fam` and Cons.prems and Cons.hyps(2) 
         have 4:"last_state (fst e, p#ps) i = last_state (fst e, ps) i" 
           by  (cases "(par fam, fst e, snd e)" rule:is_exec_frag_of.cases)
-              (auto simp add:is_trans_def par_def)
+              (auto simp add: par_def)
       from 2 3 4 Cons.hyps(2) show ?thesis by simp
     qed
   qed
@@ -88,7 +86,7 @@ proof -
       from True and prems and `i \<in> ids fam` 
         have 2:"(last_state ?e' i)\<midarrow>(fst p)\<midarrow>A_i\<longrightarrow>(snd p i)"
           by  (cases "(par fam, ?e')" rule:is_exec_frag_of.cases)
-              (auto simp add:A_i_def is_trans_def par_def split: if_splits)
+              (auto simp add:A_i_def par_def split: if_splits)
       from True have 3:"(?e \<downharpoonright> i sig) = cons_exec  (?e' \<downharpoonright> i sig) (fst p, snd p i)" 
         by (simp add:proj_exec_def A_i_def sig_def cons_exec_def)
       from `i \<in> ids fam` and last_state_proj and 0 
@@ -108,5 +106,3 @@ lemma paste_execs:
     and "\<forall> i \<in> ids fam . let sig_i = ioa.asig (memb fam i) in (t \<bar> sig_i) = trace sig_i (es i)"
   obtains e where "is_exec_of (par fam) e" and "trace (ioa.asig (par fam)) e = t" 
     and "\<forall> i \<in> ids fam . (e \<downharpoonright> i (ioa.asig (memb fam i))) = es i" oops
-
-end

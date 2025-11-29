@@ -11,9 +11,6 @@ record 'a signature =
   outputs::"'a set"
   internals::"'a set"
 
-locale IOA
-begin 
-
 subsection "Signatures"
 
 definition actions :: "'a signature \<Rightarrow> 'a set" where
@@ -41,8 +38,6 @@ definition hide_asig where
     \<lparr>inputs = inputs asig - actns, outputs = outputs asig - actns,
       internals = internals asig \<union> actns\<rparr>"
 
-end
-
 subsection "I/O Automata"
 
 type_synonym
@@ -52,9 +47,6 @@ record ('s,'a) ioa =
   asig::"'a signature"
   start::"'s set"
   trans::"('s,'a)transition set"
-
-context IOA 
-begin
 
 abbreviation "act A \<equiv> actions (asig A)"
 abbreviation "ext A \<equiv> externals (asig A)"
@@ -70,11 +62,8 @@ definition is_ioa::"('s,'a) ioa \<Rightarrow> bool" where
 definition hide where
   "hide A actns \<equiv> A\<lparr>asig := hide_asig (asig A) actns\<rparr>"
 
-definition is_trans::"'s \<Rightarrow> 'a \<Rightarrow> ('s,'a)ioa \<Rightarrow> 's \<Rightarrow> bool" where
-  "is_trans s1 a A s2 \<equiv> (s1,a,s2) \<in> trans A"
-
-notation
-  is_trans  ("_ \<midarrow>_\<midarrow>_\<longrightarrow> _" [81,81,81,81] 100)
+abbreviation is_trans :: "'s \<Rightarrow> 'a \<Rightarrow> ('s,'a)ioa \<Rightarrow> 's \<Rightarrow> bool" ("_ \<midarrow>_\<midarrow>_\<longrightarrow> _" [81,81,81,81] 100) where
+  "s1 \<midarrow>a\<midarrow>A\<longrightarrow> s2 \<equiv> (s1,a,s2) \<in> trans A"
 
 definition rename_set where
   "rename_set A ren \<equiv> {b. \<exists> x \<in> A . ren b = Some x}"
@@ -99,6 +88,7 @@ inductive
 definition invariant where 
   "invariant A P \<equiv> (\<forall> s . reachable A s \<longrightarrow> P(s))"
 
+
 theorem invariantI:
   fixes A P
   assumes c1:"\<And> s . s \<in> start A \<Longrightarrow> P s"
@@ -120,16 +110,11 @@ proof -
   thus ?thesis by (simp add:invariant_def)
 qed
 
-end
-
 subsection "Composition of Families of I/O Automata"
 
 record ('id, 'a) family =
   ids :: "'id set"
   memb :: "'id \<Rightarrow> 'a"
-
-context IOA
-begin
 
 definition is_ioa_fam where
   "is_ioa_fam fam \<equiv> \<forall> i \<in> ids fam . is_ioa (memb fam i)"
@@ -187,9 +172,7 @@ definition par::"('id, ('s,'a)ioa) family \<Rightarrow> ('id \<Rightarrow> 's,'a
 
 lemmas asig_simps = hide_asig_def is_asig_def locals_def externals_def actions_def 
   hide_def compatible_def asig_comp_def
-lemmas ioa_simps = rename_def rename_set_def is_trans_def is_ioa_def par_def
-
-end
+lemmas ioa_simps = rename_def rename_set_def is_ioa_def par_def
 
 subsection "Executions and Traces"
 
@@ -207,9 +190,6 @@ record ('s,'a)execution_module =
 record 'a trace_module =
   traces::"'a trace set"
   asig::"'a signature"
-
-context IOA
-begin
 
 fun last_state where
   "last_state (s,[]) = s"
@@ -423,7 +403,5 @@ theorem monotonicity_fam:
   and "\<forall> i \<in> ids fam1 . memb fam1 i =<| memb fam2 i" 
   shows "(par fam1) =<| (par fam2)"
 oops
-
-end
 
 end

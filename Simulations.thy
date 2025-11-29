@@ -5,9 +5,6 @@ theory Simulations
 imports IOA
 begin
 
-context IOA
-begin
-
 definition trace_match where trace_match_def[simp]:
   "trace_match A a e \<equiv> let tr = trace (ioa.asig A) e in
                     if a \<in> ext A then tr = [a] else tr = []"
@@ -296,8 +293,6 @@ theorem backward_sim_soundness:
   using assms backward_sim_execs exec_inc_imp_trace_inc by metis
 
 declare trace_match_def[simp del]
-
-end
 
 end
 

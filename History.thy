@@ -8,8 +8,6 @@ text \<open>
 The concept of unfolding of an IOA is taken from Lynch and Vaandrager's paper: "Forward
   and Backward Simulations Part 1: Untimed Systems".
 \<close>
-         
-context IOA begin
 
 context begin
 
@@ -28,9 +26,9 @@ proof -
   { fix e e' act
     assume "reachable (ioa_unfolding a) e" and tr:"e \<midarrow>act\<midarrow>(ioa_unfolding a) \<longrightarrow>e'"
     have "last_state e \<midarrow>act\<midarrow>a \<longrightarrow> last_state e'" using tr 
-      by (simp add:ioa_unfolding_def is_trans_def)
+      by (simp add:ioa_unfolding_def)
     hence "refines (last_state e, [(act, last_state e')]) e act e' a last_state"
-      by (simp add:refines_def Let_def is_trans_def trace_def schedule_def filter_act_def trace_match_def) }
+      by (simp add:refines_def Let_def trace_def schedule_def filter_act_def trace_match_def) }
   thus ?thesis by (auto simp add:is_ref_map_def, simp add:ioa_unfolding_def, blast)
 qed
 
@@ -53,7 +51,7 @@ proof -
     have tr:"s' \<midarrow>act\<midarrow>(ioa_unfolding a)\<longrightarrow> t'" and next_in_image:"t' \<in> hist_fwd_sim a t"
     proof -
       show "s' \<midarrow>act\<midarrow>(ioa_unfolding a)\<longrightarrow> t'" using \<open>s \<midarrow>act\<midarrow>a\<longrightarrow> t\<close> t'_def \<open>s' \<in> hist_fwd_sim a s\<close>
-        by (simp add:is_trans_def ioa_unfolding_def cons_exec_def hist_fwd_sim_def) 
+        by (simp add: ioa_unfolding_def cons_exec_def hist_fwd_sim_def) 
       show "t' \<in> hist_fwd_sim a t" using \<open>s' \<in> hist_fwd_sim a s\<close> t'_def \<open>s \<midarrow>act\<midarrow>a\<longrightarrow> t\<close>
         by (simp add:hist_fwd_sim_def) (metis IOA.cons_exec_def IOA.is_exec_of_def IOA.last_state.simps(2) IOA.trans_from_last_state fst_conv snd_conv)
     qed
@@ -118,16 +116,16 @@ apply (auto simp only:is_ref_map_def)
     apply (intro exI[where ?x="?e"])
     apply (auto simp add:refines_def)
         defer
-        apply (simp add:hist_ref_map_def is_trans_def trace_match_def ioa_unfolding_def add_history_def Let_def traces_simps)
+        apply (simp add:hist_ref_map_def trace_match_def ioa_unfolding_def add_history_def Let_def traces_simps)
       apply (rm_reachable)
       subgoal premises prems
       proof -
         from prems have 1:"(fst_e', snd_e') = cons_exec (fst_e, snd_e) (act, last_state (fst_e', snd_e'))" 
         and 2:"last_state (fst_e, snd_e) \<midarrow>act\<midarrow>a\<longrightarrow> last_state (fst_e', snd_e')"
-          by (simp_all add:ioa_unfolding_def is_trans_def)
+          by (simp_all add:ioa_unfolding_def)
         from 1 have 3:"fst_e = fst_e'" by (simp add:cons_exec_def)
         from 1 2 3 l6[of "(fst_e', snd_e')" "(fst_e, snd_e)" act "last_state (fst_e', snd_e')" f f\<^sub>0] show ?thesis 
-        apply (simp add:add_history_def is_trans_def Let_def, cases "hist_ref_map f f\<^sub>0 (fst_e', snd_e)", auto)
+        apply (simp add:add_history_def Let_def, cases "hist_ref_map f f\<^sub>0 (fst_e', snd_e)", auto)
             apply (metis fst_conv l5)
           apply (metis fst_conv l5) 
         done
@@ -143,8 +141,6 @@ by (metis (no_types, lifting) add_history_def ioa.select_convs(1) ioa_unfolding_
 
 theorem hist_soundness:"IOA.traces a \<subseteq> IOA.traces (add_history a f f\<^sub>0)"
 using traces_ioa_unfolding l3 by fast
-
-end
 
 end
 
